@@ -3,6 +3,7 @@
 #include <vector>
 #include <optional>
 #include <cmath> 
+#include <map> 
 
 class Operator{
     public:
@@ -48,21 +49,58 @@ class Operator{
             }
         }
         //C.M. da Fonseca / Journal of Computational and Applied Mathematics 200 (2007) 283 – 286
-        // void inverse(){
-        //     double Theta = 1;
-        //     double inv[op.size()][op.size()];
-        //     for(int i=0;i<op.size();i++){
-        //         for (int j = 0; j<op[i].size(); j++) {
-        //             Theta = inv[i][j] * Theta - inv[i-1][i] - inv[i-1][i]
-        //             if (i<=j){
-        //                 inv[i][j] = std::pow(-1.0,i+j);
-        //                 for(int k=i;i<j-1;k++){inv[i][j] *= inv[k][k+1];} 
-        //                 inv[i][j] *= inv[i][i]
-        //             }
-        //             else {}
-        //         }
-        //     }
-        // }
+        std::vector<std::vector<double>> inverse(){
+            // double inv[size][size];
+
+            auto a = [this](int i){return op[i-1][i-1];};
+            auto b = [this](int i){return op[i-1][i];};
+            auto c = [this](int i){return op[i][i-1];};
+            // for (int i=1;i<6;i++){std::cout<<a(op,i)<<std::endl;}
+            // for (int i=1;i<5;i++){std::cout<<b(op,i)<<std::endl;}
+            // for (int i=1;i<5;i++){std::cout<<c(op,i)<<std::endl;}
+
+            std::map<int,double> Theta; Theta[0] = 1; Theta[1] = a(1);
+            for (int i=2; i<size; i++) {Theta[i] = a(i)*Theta[i-1] - b(i-1)* c(i-1)*Theta[i-2];}
+            // for (auto val: Theta){std::cout<<val.first<<" "<<val.second<<std::endl;}
+        
+            double det = Theta[size-1];
+            if (det < 10e-10){std::cout<<"Zero Determinant\n";}
+
+            std::map<int,double> Phi; Phi[size+1] = 1; Phi[size] = a(size);
+            for (int i=size-1; i>0; i--) {Phi[i] = a(i)*Phi[i+1] - b(i)* c(i)*Phi[i+2];}
+            // for (auto val: Phi){std::cout<<val.first<<" "<<val.second<<std::endl;}
+            
+            std::vector<std::vector<double>> inv(size, std::vector<double>(size));
+            for(int i=1;i<=size;i++){
+                for (int j=1;j<=size;j++) {
+                    inv.at(i-1).at(j-1) = pow(-1.0, i+j)/det;
+                    // std::cout<<"-> "<<i<<" "<<j<<std::endl;
+
+                    if(i<=j){
+                        inv.at(i-1).at(j-1) = pow(-1.0, i+j)/det;
+
+                        for(int k = i; k <= j-1; k++) {inv.at(i-1).at(j-1) *= b(k);}
+                        inv.at(i-1).at(j-1) *= Theta[i-1];
+                        inv.at(i-1).at(j-1) *= Phi[j+1];
+                    } 
+                    else {
+                        inv.at(i-1).at(j-1) = pow(-1.0, i+j)/det; 
+                        for(int k = j; k <= i-1; k++) {inv.at(i-1).at(j-1) *= c(k);}
+                        inv.at(i-1).at(j-1) *= Theta[j-1];
+                        inv.at(i-1).at(j-1) *= Phi[i+1];
+                    } 
+                }
+            }
+            return inv;
+            // for(int i=1;i<=size;i++){
+            //     for (int j=1;j<=size;j++) {
+            //         if(inv.at(i-1).at(j-1)<=0) printf("%.3e ", inv.at(i-1).at(j-1));
+            //         else printf(" %.3e ", inv.at(i-1).at(j-1));
+            //     }
+            //     std::cout<<std::endl;
+            // }
+
+        }   
         
         void print(){
             std::cout<<"operator: "<<std::endl;

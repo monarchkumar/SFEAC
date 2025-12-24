@@ -22,17 +22,26 @@ int main(){
     A.delPhiiDelPhij();
     A.dirichlet(0,0);
     A.dirichlet(4,1);
-    A.print();
-    cout << string(NUMBER_OF_DASH, '-') << endl;
+    // A.print();
+    // cout << string(NUMBER_OF_DASH, '-') << endl;
 
 
     Operator f(5);
     f.Phii(1.0/4);
     f.dirichlet(0,0);
     f.dirichlet(4,1);
-    f.print();
+    // f.print();
 
-    // A.inverse();
+       
+    auto invA= A.inverse();
+
+    // for(int i=1;i<=A.size;i++){
+    //     for (int j=1;j<=A.size;j++) {
+    //         if(invA[i-1][j-1]<=0) printf("%.3e ", invA[i-1][j-1]);
+    //         else printf(" %.3e ", invA[i-1][j-1]);
+    //     }
+    //     std::cout<<std::endl;
+    // }
 
 
 
