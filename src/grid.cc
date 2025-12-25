@@ -1,13 +1,16 @@
+#include <cstdio>
 #include <iostream>
 #include <ostream>
 #include <vector>
 #include <optional>
 #include <cmath> 
 #include <map> 
+#include <format> 
 
 class Operator{
     public:
         std::vector<std::vector<double>> op; //Operator 
+        // std::vector<std::vector<double>> inv; //Inverse
         bool defined = false;
         int size; double h; 
 
@@ -32,25 +35,27 @@ class Operator{
             defined = true;
         }
         void Phii(double f){
-            op.resize(1);
-            op[0].resize(size);
-            for(double& i : op[0]) {i=f;}     
-            op[0].at(0)/=2;           
-            op[0].at(size-1)/=2;           
+            op.resize(size);
+            for(auto& row : op) {row={f};}     
+              
+            op.at(0)[0]/=2;           
+            op.at(size-1)[0]/=2;  
+            
             defined = true;
         }
 
         void dirichlet(int location, double value){
             if(!defined){std::cout<<"Operator not defined"<<std::endl; return;}
-            if(op.size()==1){op[0][location]=value;}
-            else if (op.size()>1){
+            if(op.front().size()==1){op[location].front()=value;}
+            else {
                 for (double& i: op[location]){i=0;}
                 op.at(location).at(location)=1.0;
             }
         }
         //C.M. da Fonseca / Journal of Computational and Applied Mathematics 200 (2007) 283 – 286
-        std::vector<std::vector<double>> inverse(){
-            // double inv[size][size];
+        Operator inverse(){
+            Operator resOp(this->size);
+
 
             auto a = [this](int i){return op[i-1][i-1];};
             auto b = [this](int i){return op[i-1][i];};
@@ -91,7 +96,47 @@ class Operator{
                     } 
                 }
             }
-            return inv;
+            resOp.op = inv;
+            return resOp;
+           
+
+        }   
+
+        Operator multi(Operator withOp){
+
+            Operator resOp(this->size);
+            if(this->op.front().size() != withOp.op.size()) {std::cout<<"Not compatable."<<std::endl;return resOp;} 
+
+
+            std::vector<std::vector<double>> res(op.size(), std::vector<double>(withOp.op.front().size()));
+
+            for (int i =0; i<this->op.size();i++){
+                for(int j=0; j<withOp.op.front().size(); j++){
+                    res[i][j] = 0;
+                    for (int k = 0; k < op.front().size(); k++) {
+                        res[i][j] += op[i][k] * withOp.op[k][j];
+                    }
+                }
+            }
+            resOp.op = res;
+            return resOp;
+        }
+        
+        void print(){
+            std::cout<<"operator: "<<std::endl;
+            for (int i = 0; i<op.size(); i++){
+                for (double val: op.at(i)){
+                    std::string s =  std::format("{:.3e} ",val);
+                    if(s[0]!='-') s = '+' + s;
+                    std::cout<<s;
+                    // if (val<0) {std::cout<<"<=0 "; ;}
+                    // else  {printf(" %.3e ",val);}
+                }
+                std::cout<<std::endl;
+            }
+            // std::cout<<"size: "<<size<<std::endl;
+            // std::cout<<"h: "<<h<<std::endl;
+            // std::cout<<"inverse: "<<std::endl;
             // for(int i=1;i<=size;i++){
             //     for (int j=1;j<=size;j++) {
             //         if(inv.at(i-1).at(j-1)<=0) printf("%.3e ", inv.at(i-1).at(j-1));
@@ -99,20 +144,6 @@ class Operator{
             //     }
             //     std::cout<<std::endl;
             // }
-
-        }   
-        
-        void print(){
-            std::cout<<"operator: "<<std::endl;
-            for (int i = 0; i<op.size(); i++){
-                for (auto val: op.at(i)){
-                    if (val<0) {std::cout<<" "<<val;}
-                    else  {std::cout<<"  "<<val;}
-                }
-                std::cout<<std::endl;
-            }
-            std::cout<<"size: "<<size<<std::endl;
-            std::cout<<"h: "<<h<<std::endl;
         }
 };
 
