@@ -1,8 +1,7 @@
 #include <cstdio>
+#include <fstream>
 #include <iostream>
-#include <ostream>
 #include <vector>
-#include <optional>
 #include <cmath> 
 #include <map> 
 #include <format> 
@@ -30,8 +29,9 @@ class Operator{
                     op[i][i+1]=-1;
                 }
                 for(double& i : op[i]) { i *= (1/h);}
-                
             }
+            op[0][0]/=2;
+            op[size-1][size-1]/=2;
             defined = true;
         }
         void Phii(double f){
@@ -52,17 +52,20 @@ class Operator{
                 op.at(location).at(location)=1.0;
             }
         }
+
+        void neumann(int location, double value){
+            if(!defined){std::cout<<"Operator not defined"<<std::endl; return;}
+            if(op.front().size()==1){op[location].front()+=value;}
+        }
+
+
         //C.M. da Fonseca / Journal of Computational and Applied Mathematics 200 (2007) 283 – 286
         Operator inverse(){
             Operator resOp(this->size);
 
-
             auto a = [this](int i){return op[i-1][i-1];};
             auto b = [this](int i){return op[i-1][i];};
             auto c = [this](int i){return op[i][i-1];};
-            // for (int i=1;i<6;i++){std::cout<<a(op,i)<<std::endl;}
-            // for (int i=1;i<5;i++){std::cout<<b(op,i)<<std::endl;}
-            // for (int i=1;i<5;i++){std::cout<<c(op,i)<<std::endl;}
 
             std::map<int,double> Theta; Theta[0] = 1; Theta[1] = a(1);
             for (int i=2; i<size; i++) {Theta[i] = a(i)*Theta[i-1] - b(i-1)* c(i-1)*Theta[i-2];}
@@ -127,10 +130,8 @@ class Operator{
             for (int i = 0; i<op.size(); i++){
                 for (double val: op.at(i)){
                     std::string s =  std::format("{:.3e} ",val);
-                    if(s[0]!='-') s = '+' + s;
+                    if(s[0]!='-') s = ' ' + s;
                     std::cout<<s;
-                    // if (val<0) {std::cout<<"<=0 "; ;}
-                    // else  {printf(" %.3e ",val);}
                 }
                 std::cout<<std::endl;
             }
@@ -145,44 +146,57 @@ class Operator{
             //     std::cout<<std::endl;
             // }
         }
+        void opToCSV(std::ofstream& outputFile){
+            for (int i = 0; i<op.size(); i++){
+                std::string row = "";
+                for (double val: op.at(i)){
+                    std::string cell =  std::format("{:.3e},",val);
+                    if(cell[0]!='-') cell = ' ' + cell;
+                    row+=cell;
+                }
+                row.pop_back();
+                outputFile<<row<<std::endl;
+            }
+
+        } 
 };
 
 
-class Functions: protected Operator{
-    public:
-        std::vector<double> positions;
-        std::vector<std::optional<double>> values;
-        double h; 
+// class Functions: protected Operator{
+//     public:
+//         std::vector<double> positions;
+//         std::vector<std::optional<double>> values;
+//         double h; 
 
-        enum dimensional {D1,D2,D3};
+//         enum dimensional {D1,D2,D3};
 
-        //Dirichlet both-boundary
-        Functions(dimensional dimension, int length, double xMin, double xMax, double xMinVal, double xMaxVal):Operator(length){
-            if (dimension == D1){
-                h=(xMax-xMin)/(length-1);
-                for (int i=0;i<length;i++){positions.push_back(i*h);};
-                values.resize(length);
-                values[0]=xMinVal;
-                values[length-1]=xMaxVal;
-            }
-        }
+//         //Dirichlet both-boundary
+//         Functions(dimensional dimension, int length, double xMin, double xMax, double xMinVal, double xMaxVal):Operator(length){
+//             if (dimension == D1){
+//                 h=(xMax-xMin)/(length-1);
+//                 for (int i=0;i<length;i++){positions.push_back(i*h);};
+//                 values.resize(length);
+//                 values[0]=xMinVal;
+//                 values[length-1]=xMaxVal;
+//             }
+//         }
 
-        void printValues(){
-            std::cout<<"Printing Function Parameters"<<std::endl;
-            std::cout<<std::endl;
+//         void printValues(){
+//             std::cout<<"Printing Function Parameters"<<std::endl;
+//             std::cout<<std::endl;
 
-            std::cout<<"h:"<<h<<std::endl;
-            std::cout<<std::endl;
+//             std::cout<<"h:"<<h<<std::endl;
+//             std::cout<<std::endl;
 
-            std::cout<<"position:"<<std::endl;
-            for (auto &val: positions){std::cout<<val<<" ";}
-            std::cout<<std::endl;
+//             std::cout<<"position:"<<std::endl;
+//             for (auto &val: positions){std::cout<<val<<" ";}
+//             std::cout<<std::endl;
 
-            std::cout<<std::endl<<"value:"<<std::endl;
-            for (auto &val: values){
-                if(val.has_value()){std::cout<<val.value()<<" ";}
-                else {std::cout<<"NoValue ";}
-            }
-            std::cout<<std::endl;
-        }
-};
+//             std::cout<<std::endl<<"value:"<<std::endl;
+//             for (auto &val: values){
+//                 if(val.has_value()){std::cout<<val.value()<<" ";}
+//                 else {std::cout<<"NoValue ";}
+//             }
+//             std::cout<<std::endl;
+//         }
+// };

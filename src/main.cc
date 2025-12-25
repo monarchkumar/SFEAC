@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include "version.cc"
 #include "grid.cc"
@@ -13,91 +14,30 @@ int main(){
 
     if(DEBUG){printCppVersion(NUMBER_OF_DASH);}
 
-    //Setup
-    // Functions testFunction(Functions::D1,5,0,1,0,0);
-    // testFunction.gradU_gradV();
-    // testFunction.printValues();
-
-    Operator A(5);
+    Operator A(100);
     A.delPhiiDelPhij();
     A.dirichlet(0,0);
-    A.dirichlet(4,1);
-    // cout << string(NUMBER_OF_DASH, '-') << endl;
+    A.neumann(99,1);
+    // A.print();
 
-    Operator f(5);
-    f.Phii(1.0/4);
+    Operator f(100);
+    f.Phii(1.0/99);
     f.dirichlet(0,0);
-    f.dirichlet(4,1);
+    f.neumann(99,1);
     // f.print();
 
     auto invA = A.inverse();
     // invA.print();
 
     auto res = invA.multi(f);
-    res.print();
-
-
-
+    // res.print();
+    
+    ofstream resFile("./output/res.csv");
+    res.opToCSV(resFile);
+    resFile.close();
 
     cout << string(NUMBER_OF_DASH, '-') << endl;
-    cout << "Exiting" << endl;
+    cout << "No Errors. Exiting" << endl;
     cout << string(NUMBER_OF_DASH, '-') << endl;
     return 0;
 }
-/*
-
-   
-
-    if(DEBUG){printCppVersion(NUMBER_OF_DASH);}
-
-    // I/O initiated;
-    string inputFilePath;
-    string outputFilePath;
-    ofstream outputFile;
-    
-    // Input files are YAML.
-    // cout << "File directory: ";
-    // cin >>inputFilePath;
-    // TINY_YAML::Yaml inputFile(inputFilePath + "input.yaml");
-    // TINY_YAML::Yaml inputFile("/home/mkumar/SFEAC/input/""input.yaml");
-    cout << "[HARDCODED] File directory: /home/mkumar/SFEAC/input/" << endl;
-    cout << string(NUMBER_OF_DASH, '-') << endl;
-    
-    cout << "Input file found." << endl;
-    // cout << "Title: " << inputFile["metadata"]["label"].getData<string>() << endl;
-    // outputFilePath = inputFile["metadata"]["output"].getData<string>();
-    cout << "Output: " << outputFilePath << endl;
-    outputFile.open(outputFilePath+"/output.txt");
-    outputFile << "Undefined Version: " << version << endl;
-    cout << string(NUMBER_OF_DASH, '-') << endl;
-
-    // Define solver
-    cout<<"here"<<endl;
-    // if(inputFile["solver"]["label"].getData<string>() == "ES1D"){
-        // G1D solver;
-        // solver.m = 1;
-        // solver.xMin = 0;
-        // solver.xMax = 10;
-        // solver.xGridPointsNum = 5;
-        // solver.noPartNum = 10;
-        // solver.initDist = solver.UniformDistribution;
-        // solver.initG1D();
-        // solver.solveG1D();
-        //---------------------------------------------------------------------------
-        // string mass = inputFile["particle"]["mass"].getData<string>();
-        // std::size_t* pos = 0 ;
-        // cout << std::stod(mass,pos)<< endl;
-        //---------------------------------------------------------------------------
-
-
-
-    // }
-    // else {
-    //     cout << "Error: No solver specified." << endl;
-    // }
-
-    outputFile.close();
-    cout << string(NUMBER_OF_DASH, '-') << endl;
-    cout << "Exiting" << endl << endl;
-    return 0;
-}*/
