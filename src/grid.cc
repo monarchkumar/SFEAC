@@ -1,7 +1,8 @@
+#include <algorithm>
 #include <array>
+#include <cstddef>
 #include <format>
 #include <iostream>
-#include <map>
 #include <ostream>
 #include <sys/types.h>
 #include <utility>
@@ -68,8 +69,8 @@ class Grid1D{
         for (simplexLineSegment s: simplices){std::cout<<s.index<<"-> "<<s.points[0]<<" "<<s.points[1]<<std::endl;}    
     }
     void printBoundarySimplices(){
-        printf("Boundary Point Simplices:[index-> Point Indicies]\n");
-        for (point1D s: boundarySimplices){std::cout<<s.index<<"-> "<<s.x<<std::endl;}    
+        printf("Boundary Point Simplices:[index-> x]\n");
+        for (point1D s: boundarySimplices){std::cout<<s.index<<"-> x:"<<s.x<<std::endl;}    
     }
 };
 
@@ -168,6 +169,18 @@ class Matrix1D{
         std::vector<double> values(size, value);
         Matrix1D::values = std::move(values);
     }
+    Matrix1D(Grid1D grid){
+        //Creates a matrix and calculates values based on slopes in 'grid' given. Indexes values according to 'grid' indices.  
+        std::vector<double> values(grid.points.size(), 0);
+        for (Grid1D::simplexLineSegment i: grid.simplices){
+            double h = grid.points[i.points.back()].x-grid.points[i.points.front()].x;
+            values[i.points.front()]+=0.5*h;
+            values[i.points.back()]+=0.5*h;
+        }
+        Matrix1D::values = std::move(values);
+    }
+    void dirichlet(uint index, double value){values[index]=value;}
+    void neumann(uint index, double value){values[index]+=value;}
     void output(std::ostream& output = std::cout){
         //Prints the 'value' variable to the ostream item. Defaults to std::cout.
         std::string row = "";
@@ -191,6 +204,26 @@ class Matrix2D{
         std::vector<std::vector<double>> values(size, std::vector<double>(size,value));
         Matrix2D::values = std::move(values);
     }
+    Matrix2D(Grid1D grid){
+        //Creates a matrix and calculates values based on slopes in 'grid' given. Indexes values according to 'grid' indices.  
+        //[ 1,-1] * 1/h
+        //[-1, 1] * 1/h
+        std::vector<std::vector<double>> values(grid.points.size(), std::vector<double>(grid.points.size(),0));
+        for (Grid1D::simplexLineSegment i: grid.simplices){
+            double h = grid.points[i.points.back()].x-grid.points[i.points.front()].x;
+            values[i.points.front()][i.points.front()] += 1.0/h;
+            values[i.points.front()][i.points.back()] -= 1.0/h;
+            values[i.points.back()][i.points.front()] -= 1.0/h;
+            values[i.points.back()][i.points.back()] += 1.0/h;
+        }
+        Matrix2D::values = std::move(values);
+    }
+    void dirichlet(uint index, double value=0){
+        std::vector<double> row(Matrix2D::values.size(),0);
+        row[index] = 1;
+        Matrix2D::values[index]=std::move(row);
+    }
+    void neumann(uint index=0, double value=0){NULL;}
     void output(std::ostream& output = std::cout){
         //Prints the 'value' variable to the ostream item. Defaults to std::cout.
         for (int i = 0; i<Matrix2D::values.size(); i++){
@@ -252,6 +285,16 @@ class Matrix2D{
             Matrix2D::values.at(i).erase(Matrix2D::values.at(i).begin(),Matrix2D::values.at(i).begin()+n);
         }
         Matrix2D::inverted= !Matrix2D::inverted;
+    }
+    Matrix1D mul(Matrix1D mat){
+        uint size = mat.values.size();
+        Matrix1D res(size,0);
+        for(uint i = 0;i<size;i++){
+            for(uint j = 0;j<size; j++){
+                res.values[i]+=Matrix2D::values[i][j]*mat.values[j]; 
+            }
+        }
+        return res;
     }
 };
 
